@@ -15,7 +15,7 @@ A real-time voice chat client for OpenAI Realtime API with state-of-the-art deep
 - Python 3.9 or higher
 - macOS (tested) or Linux
 - Microphone and speakers
-- Backend server running at `ws://192.168.50.40:8000` (or modify `BACKEND_URL` in the script)
+- Backend server compatible with OpenAI Realtime API
 
 ## Installation
 
@@ -25,19 +25,29 @@ A real-time voice chat client for OpenAI Realtime API with state-of-the-art deep
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. Clone the repository and install DTLN-aec
+### 2. Clone the repository with submodules
 
 ```bash
-cd /Users/control/Documents/voice
+git clone --recurse-submodules https://github.com/netixc/RealtimeVoiceClient.git
+cd RealtimeVoiceClient
+```
 
-# Clone DTLN-aec repository
-git clone https://github.com/breizhn/DTLN-aec.git
+If you already cloned without `--recurse-submodules`:
+```bash
+git submodule update --init --recursive
 ```
 
 ### 3. Install dependencies
 
 ```bash
 uv sync
+```
+
+### 4. Configure backend URL
+
+Edit `voice_chat_client.py` and set your backend server URL:
+```python
+BACKEND_URL = "ws://YOUR_SERVER_IP:PORT/v1/realtime?model=gpt-realtime"
 ```
 
 ## Usage
