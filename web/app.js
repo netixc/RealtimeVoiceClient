@@ -6,10 +6,16 @@ const messagesDiv = document.getElementById("messages");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const clearBtn = document.getElementById("clearBtn");
+const textInput = document.getElementById("textInput");
+const sendBtn = document.getElementById("sendBtn");
+const toggleMicBtn = document.getElementById("toggleMicBtn");
+const micText = document.getElementById("micText");
+const micIcon = document.getElementById("micIcon");
 
 let chatHistory = [];
 let typingUser = "";
 let typingAssistant = "";
+let micEnabled = true;
 
 // Update status display
 function setStatus(text, active = false) {
@@ -92,6 +98,9 @@ eel.expose(enable_controls);
 function enable_controls(enabled) {
   startBtn.disabled = !enabled;
   stopBtn.disabled = enabled;
+  textInput.disabled = !enabled;
+  sendBtn.disabled = !enabled;
+  toggleMicBtn.disabled = !enabled;
 }
 
 // Button handlers
@@ -99,6 +108,9 @@ startBtn.onclick = async () => {
   setStatus("Starting...", true);
   startBtn.disabled = true;
   stopBtn.disabled = false;
+  textInput.disabled = false;
+  sendBtn.disabled = false;
+  toggleMicBtn.disabled = false;
 
   // Call Python function
   await eel.start_voice_chat()();
@@ -112,6 +124,9 @@ stopBtn.onclick = async () => {
   await eel.stop_voice_chat()();
 
   startBtn.disabled = false;
+  textInput.disabled = true;
+  sendBtn.disabled = true;
+  toggleMicBtn.disabled = true;
   setStatus("Stopped", false);
 };
 
@@ -123,6 +138,50 @@ clearBtn.onclick = () => {
 
   // Optionally notify Python
   eel.clear_conversation();
+};
+
+sendBtn.onclick = async () => {
+  const text = textInput.value.trim();
+  if (!text) return;
+
+  // Clear input
+  textInput.value = "";
+
+  // Send to Python backend (it will be added to UI when server confirms)
+  await eel.send_text_message(text)();
+};
+
+// Handle Enter key in text input
+textInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && !textInput.disabled) {
+    sendBtn.onclick();
+  }
+});
+
+toggleMicBtn.onclick = async () => {
+  micEnabled = !micEnabled;
+
+  if (micEnabled) {
+    // Enable mic
+    toggleMicBtn.classList.remove('muted');
+    micText.textContent = 'Mic On';
+    micIcon.innerHTML = `
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    `;
+    await eel.toggle_microphone(true)();
+  } else {
+    // Disable mic (muted)
+    toggleMicBtn.classList.add('muted');
+    micText.textContent = 'Mic Off';
+    micIcon.innerHTML = `
+      <path d="M2 2l20 20M15 9.34V5a3 3 0 0 0-5.94-.6M9 9v3a3 3 0 0 0 5.12 2.12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    `;
+    await eel.toggle_microphone(false)();
+  }
 };
 
 // Initial render

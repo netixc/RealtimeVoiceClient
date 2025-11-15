@@ -133,11 +133,44 @@
     }
     .input-bar {
       display: flex;
+      flex-direction: column;
       padding: 12px 12px;
       background: #fff;
       border-top: 1px solid #e1e5ef;
+      gap: 8px;
+    }
+    .input-row {
+      display: flex;
       align-items: center;
       gap: 8px;
+    }
+    .text-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .text-input:focus {
+      border-color: #667eea;
+    }
+    .text-input:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+    }
+    .send-btn {
+      background-color: #667eea;
+      padding: 10px 20px;
+    }
+    .toggle-mic-btn {
+      background-color: #10b981;
+      min-width: 120px;
+    }
+    .toggle-mic-btn.muted {
+      background-color: #ef4444;
     }
     .btn {
       display: inline-flex;
@@ -214,27 +247,47 @@
       </div>
       <div class="messages" id="messages"></div>
       <div class="input-bar">
-        <button id="startBtn" title="Start voice chat" class="btn start-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <span style="margin-left: 8px;">Start</span>
-        </button>
+        <div class="input-row">
+          <input type="text" id="textInput" class="text-input" placeholder="Type a message..." disabled>
+          <button id="sendBtn" title="Send text message" class="btn send-btn" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-row">
+          <button id="startBtn" title="Start voice chat" class="btn start-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span style="margin-left: 8px;">Start</span>
+          </button>
 
-        <button id="stopBtn" title="Stop voice chat" class="btn stop-btn" disabled>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>
-          </svg>
-          <span style="margin-left: 8px;">Stop</span>
-        </button>
+          <button id="stopBtn" title="Stop voice chat" class="btn stop-btn" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>
+            </svg>
+            <span style="margin-left: 8px;">Stop</span>
+          </button>
 
-        <button id="clearBtn" title="Clear conversation" class="btn reset-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+          <button id="toggleMicBtn" title="Toggle microphone" class="btn toggle-mic-btn" disabled>
+            <svg id="micIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span id="micText" style="margin-left: 8px;">Mic On</span>
+          </button>
+
+          <button id="clearBtn" title="Clear conversation" class="btn reset-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>

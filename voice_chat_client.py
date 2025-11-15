@@ -199,6 +199,7 @@ class VoiceChatClient:
         self.audio_buffer = []
         self.silence_frames = 0
         self.speech_frames = 0
+        self.mic_enabled = True  # Microphone toggle
 
         # Queues
         self.audio_queue = queue.Queue()
@@ -574,6 +575,17 @@ class VoiceChatClient:
             try:
                 # Read audio chunk from microphone
                 audio_chunk = self.input_stream.read(CHUNK_SIZE, exception_on_overflow=False)
+
+                # Skip processing if mic is disabled
+                if not self.mic_enabled:
+                    # Reset speech detection state when mic is disabled
+                    if self.is_listening:
+                        self.is_listening = False
+                        self.audio_buffer = []
+                        self.silence_frames = 0
+                        self.speech_frames = 0
+                        print("\n🔇 Microphone muted - stopping recording")
+                    continue
 
                 chunk_count += 1
                 if DEBUG_AEC and chunk_count % 50 == 0:  # Every 50 chunks (~1.5 seconds)

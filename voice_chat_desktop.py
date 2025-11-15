@@ -120,12 +120,64 @@ def stop_voice_chat():
     print("🛑 Stopping voice chat client...")
 
     try:
-        client.cleanup()
+        client.close()
         client = None
         eel.update_status("Stopped", False)
     except Exception as e:
         print(f"Error stopping client: {e}")
         eel.update_status(f"Error: {e}", False)
+
+@eel.expose
+def send_text_message(text):
+    """Send a text message to the AI"""
+    global client
+
+    if client is None:
+        print("Voice chat not running - cannot send text message")
+        eel.update_status("Not connected", False)
+        return
+
+    print(f"📤 Sending text message: {text}")
+
+    try:
+        # Send text message as a conversation item
+        client.send_event("conversation.item.create", {
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": text
+                    }
+                ]
+            }
+        })
+
+        # Request a response
+        client.send_event("response.create")
+
+    except Exception as e:
+        print(f"Error sending text message: {e}")
+        eel.update_status(f"Error: {e}", False)
+
+@eel.expose
+def toggle_microphone(enabled):
+    """Toggle microphone on/off"""
+    global client
+
+    if client is None:
+        print("Voice chat not running - cannot toggle microphone")
+        return
+
+    if enabled:
+        print("🎤 Microphone enabled")
+        client.mic_enabled = True
+        eel.update_status("Listening...", True)
+    else:
+        print("🔇 Microphone muted")
+        client.mic_enabled = False
+        eel.update_status("Mic muted", True)
 
 @eel.expose
 def clear_conversation():
@@ -142,12 +194,16 @@ def main():
     print()
 
     try:
-        # Start Eel app
-        eel.start('index.html', size=(800, 900), port=8888)
+        # Start Eel app - try Brave browser on macOS
+        eel.start('index.html',
+                  size=(800, 900),
+                  port=8889,
+                  mode='custom',
+                  cmdline_args=['/Applications/Brave Browser.app/Contents/MacOS/Brave Browser', '--app=http://localhost:8889/index.html'])
     except (SystemExit, KeyboardInterrupt):
         print("\n\nShutting down...")
         if client:
-            client.cleanup()
+            client.close()
         sys.exit(0)
 
 if __name__ == "__main__":
