@@ -9,10 +9,6 @@ instead of the custom backend server.
 import os
 from pathlib import Path
 
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv()
-
 # Override BACKEND_URL to connect directly to OpenAI
 os.environ["BACKEND_URL"] = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
 os.environ["API_KEY"] = os.environ["OPENAI_API_KEY"]
