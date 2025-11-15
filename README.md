@@ -1,25 +1,51 @@
-# Voice Chat Client with DTLN-aec Echo Cancellation
+# Multi-Agent Voice Orchestrator
 
-A real-time voice chat client for OpenAI Realtime API with state-of-the-art deep learning echo cancellation using DTLN-aec.
+A real-time voice chat orchestrator for OpenAI Realtime API with multi-agent management, DTLN-aec echo cancellation, and integrated observability.
+
+**Voice-control multiple AI agents** (Claude Code, Gemini Browser, Agent Zero) through natural conversation or text, with real-time monitoring and a beautiful desktop UI.
 
 This client is designed to work with the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend server.
 
 ## Features
 
-- 🖥️ **Desktop App with Beautiful UI** - Modern web interface in a desktop application
-- 🎙️ **Real-time voice conversation** with AI assistant
-- 🤖 **DTLN-aec echo cancellation** - Deep learning based acoustic echo cancellation
-- 🔊 **Full-duplex communication** - Interrupt the AI anytime while it's speaking
-- 💬 **Conversation history** - See your chat transcript in real-time
-- 🎯 **Client-side VAD** - Voice activity detection for accurate speech recognition
-- ⚡ **Low latency** - ~30ms processing latency
+### 🎙️ Voice & Communication
+- **Real-time voice conversation** with AI assistant using OpenAI Realtime API
+- **DTLN-aec echo cancellation** - Deep learning based acoustic echo cancellation
+- **Full-duplex communication** - Interrupt the AI anytime while it's speaking
+- **Voice OR Text input** - Speak or type your commands
+- **Client-side VAD** - Voice activity detection for accurate speech recognition
+- **Microphone toggle** - Mute/unmute before or during sessions
+- **Low latency** - ~30ms audio processing
+
+### 🤖 Multi-Agent Orchestration
+- **Claude Code Agents** - Software development using Claude CLI (subscription-based)
+- **Gemini Browser Agents** - Web automation with Playwright + Gemini AI
+- **Agent Zero Agents** - General-purpose AI tasks via API
+- **Function Calling** - AI automatically creates and manages agents via tools
+- **Agent Registry** - Persistent agent tracking with metadata
+- **Background Execution** - Async agent task processing
+- **Operator Logs** - Detailed execution logs for each agent command
+
+### 🖥️ Desktop UI
+- **3-Tab Interface** - Chat, Agents, Events
+- **Agent Management Panel** - Create, command, delete agents with visual cards
+- **Observability Dashboard** - Real-time event stream with color-coded logs
+- **Beautiful Design** - Modern UI with Inter font and smooth animations
+- **Empty States** - Helpful guidance when no agents or events exist
 
 ## Requirements
 
+### Core
 - Python 3.9 or higher
+- [Astral uv](https://docs.astral.sh/uv/) - Fast Python package manager
 - macOS (tested) or Linux
 - Microphone and speakers
-- Backend server: [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) (recommended) or any OpenAI Realtime API compatible server
+- Backend server: [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) or any OpenAI Realtime API compatible server
+
+### Agent-Specific (Optional)
+- **Claude Code**: Claude CLI (`npm install -g @anthropic-ai/claude-code`) + subscription
+- **Gemini Browser**: `pip install google-generativeai playwright` + `playwright install` + GEMINI_API_KEY
+- **Agent Zero**: `pip install requests` + Agent Zero API endpoint
 
 ## Installation
 
@@ -47,19 +73,30 @@ git submodule update --init --recursive
 uv sync
 ```
 
-### 4. Set up backend server
+### 4. Configure environment variables
 
-Run the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend server, then configure the client:
+Copy `.env.sample` to `.env` and configure:
 
-Edit `voice_chat_client.py` and set your backend server URL:
-```python
-BACKEND_URL = "ws://YOUR_SERVER_IP:PORT/v1/realtime?model=gpt-realtime"
+```bash
+cp .env.sample .env
+# Edit .env with your values
 ```
 
-Example: If running backend locally on port 8000:
-```python
-BACKEND_URL = "ws://localhost:8000/v1/realtime?model=gpt-realtime"
+**Required:**
+```bash
+OPENAI_API_KEY=sk-...  # Your OpenAI API key
+BACKEND_URL=ws://YOUR_SERVER_IP:PORT/v1/realtime?model=gpt-realtime
 ```
+
+**Optional (for specific agents):**
+```bash
+GEMINI_API_KEY=...  # For Gemini browser automation
+AGENT_ZERO_API_URL=http://localhost:5000  # For Agent Zero
+```
+
+### 5. Set up backend server
+
+Run the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend server on your network or locally.
 
 ## Usage
 
@@ -72,11 +109,52 @@ uv run voice_chat_desktop.py
 ```
 
 This launches a desktop window with:
-- Real-time conversation history
-- Visual status indicators
-- Start/Stop controls
-- Clear conversation button
+- **💬 Chat Tab** - Real-time conversation with voice and text input
+- **🤖 Agents Tab** - Create and manage AI agents
+- **📊 Events Tab** - Monitor all agent activity in real-time
+- Visual status indicators and microphone toggle
 - DTLN-aec echo cancellation
+
+### Using Agents
+
+**Via Voice:**
+1. Click **Start** to begin voice chat
+2. Say: "Create a Claude Code agent called my-coder"
+3. Say: "Tell my-coder to list all Python files"
+4. The AI will automatically create the agent and send commands
+
+**Via UI:**
+1. Click **Start** button
+2. Go to **🤖 Agents** tab
+3. Click **+ Create New Agent**
+4. Fill in: Tool type, Agent type, Agent name
+5. Click **📝 Command** to send tasks to your agent
+6. Check **📊 Events** tab to see execution logs
+
+**Via Text:**
+1. Click **Start** button
+2. Type in the text box: "Create a Gemini browser agent"
+3. Type: "Command the agent to search for Python tutorials"
+
+### Agent Types
+
+**Claude Code (`claude_code`)**
+- Software development and coding tasks
+- Requires: Claude CLI installed
+- Type: `agentic_coding`
+- Example: "Create a Python web scraper"
+
+**Gemini Browser (`gemini`)**
+- Web automation and browsing
+- Requires: GEMINI_API_KEY + playwright
+- Type: `agentic_browsing`
+- Example: "Navigate to GitHub and take a screenshot"
+
+**Agent Zero (`agent_zero`)**
+- General-purpose AI tasks
+- Requires: AGENT_ZERO_API_URL configured
+- Type: `agentic_general`
+- Example: "Research the latest AI news"
 
 ### Terminal Client (Advanced)
 

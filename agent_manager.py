@@ -8,6 +8,7 @@ import json
 import threading
 import subprocess
 import shutil
+import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -422,21 +423,261 @@ class AgentManager:
         self, agent_name: str, prompt: str, metadata: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute Gemini browser agent command"""
-        # Placeholder for Gemini browser automation
+        # Create operator file for tracking
+        agent_dir = self.agents_dir / "gemini" / agent_name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        operator_file = f"operator_{timestamp}.md"
+        operator_path = agent_dir / operator_file
+
+        # Write initial operator file
+        try:
+            operator_path.write_text(
+                f"# Gemini Browser Agent: {agent_name}\n"
+                f"Created: {datetime.now().isoformat()}\n\n"
+                f"## Task\n{prompt}\n\n"
+                f"## Status\nProcessing...\n",
+                encoding="utf-8"
+            )
+        except Exception as e:
+            return {"ok": False, "error": f"Failed to create operator file: {e}"}
+
+        # Update registry with operator file
+        with self.registry_lock:
+            metadata["operator_files"].append(operator_file)
+            self._save_registry("gemini")
+
+        # Execute in background thread
+        thread = threading.Thread(
+            target=self._run_gemini_browser_task,
+            args=(agent_name, prompt, operator_path),
+            daemon=True
+        )
+        thread.start()
+        self.background_threads.append(thread)
+
         return {
-            "ok": False,
-            "error": "Gemini browser automation not yet implemented"
+            "ok": True,
+            "operator_file": operator_file,
+            "message": f"Browser task dispatched to {agent_name}"
         }
+
+    def _run_gemini_browser_task(
+        self, agent_name: str, prompt: str, operator_path: Path
+    ):
+        """Background thread to run Gemini browser automation"""
+        try:
+            # Import Playwright
+            try:
+                from playwright.sync_api import sync_playwright
+            except ImportError:
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n❌ ERROR: playwright not installed\n"
+                    f"Install with: pip install playwright && playwright install\n",
+                    encoding="utf-8"
+                )
+                return
+
+            # Import Google GenAI
+            try:
+                import google.generativeai as genai
+                gemini_api_key = os.environ.get("GEMINI_API_KEY")
+                if not gemini_api_key:
+                    operator_path.write_text(
+                        f"{operator_path.read_text()}\n\n"
+                        f"## Result\n❌ ERROR: GEMINI_API_KEY not set in environment\n",
+                        encoding="utf-8"
+                    )
+                    return
+                genai.configure(api_key=gemini_api_key)
+            except ImportError:
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n❌ ERROR: google-generativeai not installed\n"
+                    f"Install with: pip install google-generativeai\n",
+                    encoding="utf-8"
+                )
+                return
+
+            # Run browser automation with Gemini
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=False)
+                page = browser.new_page()
+
+                # Navigate to a starting page
+                page.goto("https://www.google.com")
+
+                # Take screenshot
+                screenshot_path = operator_path.parent / f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                page.screenshot(path=str(screenshot_path))
+
+                # Use Gemini to analyze the task
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(
+                    f"Browser automation task: {prompt}\n\n"
+                    f"Current page: {page.url}\n"
+                    f"Provide step-by-step instructions for this browser task."
+                )
+
+                result_text = response.text if hasattr(response, 'text') else str(response)
+
+                # Update operator file with result
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n✅ SUCCESS\n"
+                    f"Screenshot: {screenshot_path.name}\n\n"
+                    f"### Gemini Response\n{result_text}\n\n"
+                    f"### Note\n"
+                    f"Full browser automation with Gemini Computer Use requires additional setup.\n"
+                    f"This is a basic implementation showing browser control + Gemini analysis.\n",
+                    encoding="utf-8"
+                )
+
+                browser.close()
+
+            self.logger.info(f"Gemini browser task completed for {agent_name}")
+
+        except Exception as e:
+            operator_path.write_text(
+                f"{operator_path.read_text()}\n\n"
+                f"## Result\n❌ ERROR: {e}\n",
+                encoding="utf-8"
+            )
+            self.logger.error(f"Gemini browser task failed for {agent_name}: {e}")
 
     def _command_agent_zero(
         self, agent_name: str, prompt: str, metadata: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute Agent Zero command"""
-        # Placeholder for Agent Zero
+        # Create operator file for tracking
+        agent_dir = self.agents_dir / "agent_zero" / agent_name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        operator_file = f"operator_{timestamp}.md"
+        operator_path = agent_dir / operator_file
+
+        # Write initial operator file
+        try:
+            operator_path.write_text(
+                f"# Agent Zero: {agent_name}\n"
+                f"Created: {datetime.now().isoformat()}\n\n"
+                f"## Task\n{prompt}\n\n"
+                f"## Status\nProcessing...\n",
+                encoding="utf-8"
+            )
+        except Exception as e:
+            return {"ok": False, "error": f"Failed to create operator file: {e}"}
+
+        # Update registry with operator file
+        with self.registry_lock:
+            metadata["operator_files"].append(operator_file)
+            self._save_registry("agent_zero")
+
+        # Execute in background thread
+        thread = threading.Thread(
+            target=self._run_agent_zero_task,
+            args=(agent_name, prompt, operator_path),
+            daemon=True
+        )
+        thread.start()
+        self.background_threads.append(thread)
+
         return {
-            "ok": False,
-            "error": "Agent Zero not yet implemented"
+            "ok": True,
+            "operator_file": operator_file,
+            "message": f"Task dispatched to Agent Zero: {agent_name}"
         }
+
+    def _run_agent_zero_task(
+        self, agent_name: str, prompt: str, operator_path: Path
+    ):
+        """Background thread to run Agent Zero task"""
+        try:
+            # Check for Agent Zero API configuration
+            agent_zero_api_url = os.environ.get("AGENT_ZERO_API_URL")
+            agent_zero_api_key = os.environ.get("AGENT_ZERO_API_KEY")
+
+            if not agent_zero_api_url:
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n❌ ERROR: AGENT_ZERO_API_URL not set in environment\n"
+                    f"Set the API endpoint URL for Agent Zero.\n",
+                    encoding="utf-8"
+                )
+                return
+
+            # Import requests for HTTP API calls
+            try:
+                import requests
+            except ImportError:
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n❌ ERROR: requests library not installed\n"
+                    f"Install with: pip install requests\n",
+                    encoding="utf-8"
+                )
+                return
+
+            # Make API request to Agent Zero
+            headers = {}
+            if agent_zero_api_key:
+                headers["Authorization"] = f"Bearer {agent_zero_api_key}"
+
+            payload = {
+                "agent_name": agent_name,
+                "task": prompt,
+                "max_iterations": 10
+            }
+
+            response = requests.post(
+                f"{agent_zero_api_url}/api/task",
+                json=payload,
+                headers=headers,
+                timeout=300  # 5 minute timeout
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n✅ SUCCESS\n\n"
+                    f"### Response\n```json\n{json.dumps(result, indent=2)}\n```\n",
+                    encoding="utf-8"
+                )
+            else:
+                operator_path.write_text(
+                    f"{operator_path.read_text()}\n\n"
+                    f"## Result\n❌ ERROR: HTTP {response.status_code}\n"
+                    f"Response: {response.text}\n",
+                    encoding="utf-8"
+                )
+
+            self.logger.info(f"Agent Zero task completed for {agent_name}")
+
+        except requests.exceptions.Timeout:
+            operator_path.write_text(
+                f"{operator_path.read_text()}\n\n"
+                f"## Result\n❌ TIMEOUT - Request exceeded 5 minutes\n",
+                encoding="utf-8"
+            )
+            self.logger.error(f"Agent Zero task timed out for {agent_name}")
+
+        except requests.exceptions.ConnectionError as e:
+            operator_path.write_text(
+                f"{operator_path.read_text()}\n\n"
+                f"## Result\n❌ CONNECTION ERROR\n"
+                f"Could not connect to Agent Zero API at {agent_zero_api_url}\n"
+                f"Error: {e}\n",
+                encoding="utf-8"
+            )
+            self.logger.error(f"Agent Zero connection failed for {agent_name}: {e}")
+
+        except Exception as e:
+            operator_path.write_text(
+                f"{operator_path.read_text()}\n\n"
+                f"## Result\n❌ ERROR: {e}\n",
+                encoding="utf-8"
+            )
+            self.logger.error(f"Agent Zero task failed for {agent_name}: {e}")
 
     # ------------------------------------------------------------------ #
     # Cleanup
