@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice Chat - DTLN-aec</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,500,700&display=swap">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #e0e0e0;
+      --bubble-user: #2c3e50;
+      --bubble-user-text: #ffffff;
+      --bubble-assistant: #dcdcdc;
+      --bubble-assistant-text: #333333;
+      --bg: #f4f4f4;
+      --shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #app {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-height: 100vh;
+    }
+    .chat-container {
+      flex: 1;
+      max-width: 600px;
+      width: 100%;
+      background: #fff;
+      box-shadow: var(--shadow);
+      margin: 24px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 18px 24px;
+      font-size: 1.25rem;
+      letter-spacing: 1px;
+      font-weight: 500;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: #c0c0c0;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #666;
+    }
+    .status-dot.active {
+      background: #4ade80;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .messages {
+      flex: 1;
+      padding: 20px 16px 16px 16px;
+      overflow-y: auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      max-width: 82%;
+      font-size: 1.02rem;
+      line-height: 1.6;
+      position: relative;
+      display: inline-block;
+      word-break: break-word;
+      box-shadow: 0 0.5px 2px rgba(44,62,80,0.1);
+    }
+    .bubble.user {
+      background: var(--bubble-user);
+      color: var(--bubble-user-text);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      margin-left: auto;
+    }
+    .bubble.assistant {
+      background: var(--bubble-assistant);
+      color: var(--bubble-assistant-text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      margin-right: auto;
+    }
+    .bubble.typing {
+      background: #ebedef;
+      color: #444;
+      font-style: italic;
+      opacity: 0.9;
+      animation: pulsebg 1.3s linear infinite;
+      min-width: 60px;
+      border-radius: 16px;
+    }
+    @keyframes pulsebg {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
+    }
+    .input-bar {
+      display: flex;
+      padding: 12px 12px;
+      background: #fff;
+      border-top: 1px solid #e1e5ef;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-weight: 500;
+      font-size: 16px;
+      cursor: pointer;
+      color: white;
+      transition: all 0.2s ease;
+    }
+    .btn svg {
+      margin: 0;
+    }
+    .start-btn {
+      background-color: #10b981;
+    }
+    .stop-btn {
+      background-color: #ef4444;
+    }
+    .reset-btn {
+      background-color: #3b82f6;
+    }
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .aec-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 8px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="chat-container">
+      <div class="header">
+        <svg height="24" width="24" viewBox="0 0 22 22" fill="#fff" style="margin-right:8px">
+          <circle cx="11" cy="11" r="12" fill="#222F3D" />
+          <text
+            x="50%"
+            y="50%"
+            fill="#fff"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            font-size="12"
+            font-family="Inter"
+          >AI</text>
+        </svg>
+        Voice Chat
+        <span class="aec-badge">DTLN-aec</span>
+        <span class="status" id="status">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Ready</span>
+        </span>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="input-bar">
+        <button id="startBtn" title="Start voice chat" class="btn start-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span style="margin-left: 8px;">Start</span>
+        </button>
+
+        <button id="stopBtn" title="Stop voice chat" class="btn stop-btn" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>
+          </svg>
+          <span style="margin-left: 8px;">Stop</span>
+        </button>
+
+        <button id="clearBtn" title="Clear conversation" class="btn reset-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="/eel.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

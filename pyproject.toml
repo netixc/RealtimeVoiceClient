@@ -10,6 +10,7 @@ dependencies = [
     "tensorflow>=2.14.0",
     "webrtcvad>=2.0.10",
     "websocket-client>=1.6.0",
+    "eel>=0.16.0",
 ]
 
 [tool.uv]

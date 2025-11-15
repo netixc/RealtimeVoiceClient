@@ -6,9 +6,11 @@ This client is designed to work with the [RealtimeVoiceChat](https://github.com/
 
 ## Features
 
+- 🖥️ **Desktop App with Beautiful UI** - Modern web interface in a desktop application
 - 🎙️ **Real-time voice conversation** with AI assistant
 - 🤖 **DTLN-aec echo cancellation** - Deep learning based acoustic echo cancellation
 - 🔊 **Full-duplex communication** - Interrupt the AI anytime while it's speaking
+- 💬 **Conversation history** - See your chat transcript in real-time
 - 🎯 **Client-side VAD** - Voice activity detection for accurate speech recognition
 - ⚡ **Low latency** - ~30ms processing latency
 
@@ -61,7 +63,24 @@ BACKEND_URL = "ws://localhost:8000/v1/realtime?model=gpt-realtime"
 
 ## Usage
 
-### Run the voice chat client
+### Desktop App (Recommended)
+
+Run the beautiful desktop app with UI:
+
+```bash
+uv run voice_chat_desktop.py
+```
+
+This launches a desktop window with:
+- Real-time conversation history
+- Visual status indicators
+- Start/Stop controls
+- Clear conversation button
+- DTLN-aec echo cancellation
+
+### Terminal Client (Advanced)
+
+Run the command-line version:
 
 ```bash
 uv run voice_chat_client.py
@@ -71,7 +90,8 @@ uv run voice_chat_client.py
 
 - **Speak naturally** - The client will detect when you start and stop speaking
 - **Interrupt anytime** - Just start speaking to interrupt the AI mid-response
-- **Press Ctrl+C** - Exit the application
+- **Desktop App**: Click Start/Stop buttons
+- **Terminal**: Press Ctrl+C to exit
 
 ## Configuration
 
@@ -147,6 +167,7 @@ uv run python -c "import pyaudio; p = pyaudio.PyAudio(); [print(f'{i}: {p.get_de
 
 ## Dependencies
 
+- **eel** - Desktop app framework (web UI in Python)
 - **numpy** - Numerical computing for audio processing
 - **pyaudio** - Audio I/O
 - **scipy** - Audio resampling (24kHz ↔ 16kHz)
