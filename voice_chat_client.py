@@ -364,6 +364,9 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
                 tools = updated_session.get("tools")
                 if tools:
                     print(f"   ✅ Server confirmed {len(tools)} tools registered")
+                    # Show tool details
+                    for tool in tools:
+                        print(f"      - {tool.get('name', 'unknown')}")
                 elif self.function_handlers:
                     print(f"   ⚠️  WARNING: We sent tools but server returned none!")
                     print(f"   This means the backend doesn't support function calling.")
@@ -906,11 +909,11 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
         self.send_event("input_audio_buffer.commit")
 
         # Request a new response with tool usage enabled
-        # Use "required" to force the model to use tools when appropriate
+        # Use "auto" to let the model decide when to use tools
         self.send_event("response.create", {
             "response": {
                 "modalities": ["text", "audio"],
-                "tool_choice": "required"
+                "tool_choice": "auto"
             }
         })
 
