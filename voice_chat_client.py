@@ -81,7 +81,7 @@ CONTINUOUS_STREAMING = False  # Use client-side VAD to detect speech
 # Echo cancellation configuration
 ECHO_SUPPRESSION_ENABLED = True  # Enable echo cancellation
 ECHO_SUPPRESSION_RATIO = 0.95  # How much to suppress echo (0.0-1.0)
-DEBUG_AEC = False  # Enable AEC debugging output (set True to see echo cancellation stats)
+DEBUG_AEC = True  # Enable AEC debugging output (set True to see echo cancellation stats)
 AEC_FILTER_LENGTH = 256  # Adaptive filter taps (16ms at 16kHz)
 AEC_STEP_SIZE = 0.5  # NLMS learning rate (mu) - can be higher due to normalization
 
@@ -358,6 +358,14 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
             elif event_type == "session.updated":
                 print("✅ Session configured")
                 updated_session = event.get("session", {})
+
+                # Debug: Check if tools were accepted by server
+                tools = updated_session.get("tools")
+                if tools:
+                    print(f"   ✅ Server confirmed {len(tools)} tools registered")
+                elif self.function_handlers:
+                    print(f"   ⚠️  WARNING: We sent tools but server returned none!")
+                    print(f"   This means the backend doesn't support function calling.")
                 turn_detection = updated_session.get("turn_detection", {})
                 if isinstance(turn_detection, dict):
                     print(f"   Turn detection updated to: {turn_detection.get('type', 'unknown')}")
