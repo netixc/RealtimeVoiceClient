@@ -2,6 +2,8 @@
 
 A real-time voice chat client for OpenAI Realtime API with state-of-the-art deep learning echo cancellation using DTLN-aec.
 
+This client is designed to work with the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend server.
+
 ## Features
 
 - 🎙️ **Real-time voice conversation** with AI assistant
@@ -15,7 +17,7 @@ A real-time voice chat client for OpenAI Realtime API with state-of-the-art deep
 - Python 3.9 or higher
 - macOS (tested) or Linux
 - Microphone and speakers
-- Backend server compatible with OpenAI Realtime API
+- Backend server: [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) (recommended) or any OpenAI Realtime API compatible server
 
 ## Installation
 
@@ -43,11 +45,18 @@ git submodule update --init --recursive
 uv sync
 ```
 
-### 4. Configure backend URL
+### 4. Set up backend server
+
+Run the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend server, then configure the client:
 
 Edit `voice_chat_client.py` and set your backend server URL:
 ```python
 BACKEND_URL = "ws://YOUR_SERVER_IP:PORT/v1/realtime?model=gpt-realtime"
+```
+
+Example: If running backend locally on port 8000:
+```python
+BACKEND_URL = "ws://localhost:8000/v1/realtime?model=gpt-realtime"
 ```
 
 ## Usage
