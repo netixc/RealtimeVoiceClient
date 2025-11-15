@@ -100,7 +100,7 @@ function enable_controls(enabled) {
   stopBtn.disabled = enabled;
   textInput.disabled = !enabled;
   sendBtn.disabled = !enabled;
-  toggleMicBtn.disabled = !enabled;
+  // toggleMicBtn stays enabled always
 }
 
 // Button handlers
@@ -110,10 +110,9 @@ startBtn.onclick = async () => {
   stopBtn.disabled = false;
   textInput.disabled = false;
   sendBtn.disabled = false;
-  toggleMicBtn.disabled = false;
 
-  // Call Python function
-  await eel.start_voice_chat()();
+  // Call Python function with current mic state
+  await eel.start_voice_chat(micEnabled)();
 };
 
 stopBtn.onclick = async () => {
@@ -126,7 +125,6 @@ stopBtn.onclick = async () => {
   startBtn.disabled = false;
   textInput.disabled = true;
   sendBtn.disabled = true;
-  toggleMicBtn.disabled = true;
   setStatus("Stopped", false);
 };
 
@@ -158,7 +156,7 @@ textInput.addEventListener('keypress', (e) => {
   }
 });
 
-toggleMicBtn.onclick = async () => {
+toggleMicBtn.onclick = () => {
   micEnabled = !micEnabled;
 
   if (micEnabled) {
@@ -170,7 +168,10 @@ toggleMicBtn.onclick = async () => {
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     `;
-    await eel.toggle_microphone(true)();
+    // Only call backend if client is running
+    if (stopBtn.disabled === false) {
+      eel.toggle_microphone(true)();
+    }
   } else {
     // Disable mic (muted)
     toggleMicBtn.classList.add('muted');
@@ -180,7 +181,10 @@ toggleMicBtn.onclick = async () => {
       <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       <path d="M12 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     `;
-    await eel.toggle_microphone(false)();
+    // Only call backend if client is running
+    if (stopBtn.disabled === false) {
+      eel.toggle_microphone(false)();
+    }
   }
 };
 

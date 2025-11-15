@@ -18,7 +18,7 @@ client_thread = None
 eel.init('web')
 
 @eel.expose
-def start_voice_chat():
+def start_voice_chat(mic_enabled=True):
     """Start the voice chat client"""
     global client, client_thread
 
@@ -30,6 +30,9 @@ def start_voice_chat():
 
     # Create client with custom callbacks for UI updates
     client = VoiceChatClient(BACKEND_URL, API_KEY)
+    # Set initial mic state from UI
+    client.mic_enabled = mic_enabled
+    print(f"   🎤 Microphone initial state: {'enabled' if mic_enabled else 'muted'}")
 
     # Override callbacks to update UI
     original_on_message = client.on_message
