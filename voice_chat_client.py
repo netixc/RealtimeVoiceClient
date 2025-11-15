@@ -487,6 +487,7 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
                         })
 
                         # Request response to continue conversation
+                        # After a tool is executed, let model decide (auto) what to do next
                         self.send_event("response.create", {
                             "response": {
                                 "modalities": ["text", "audio"],
@@ -905,10 +906,11 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
         self.send_event("input_audio_buffer.commit")
 
         # Request a new response with tool usage enabled
+        # Use "required" to force the model to use tools when appropriate
         self.send_event("response.create", {
             "response": {
                 "modalities": ["text", "audio"],
-                "tool_choice": "auto"
+                "tool_choice": "required"
             }
         })
 

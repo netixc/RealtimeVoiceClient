@@ -178,10 +178,11 @@ def send_text_message(text):
         })
 
         # Request a response with tool usage enabled
+        # Use "required" to force the model to use tools when appropriate
         client.send_event("response.create", {
             "response": {
                 "modalities": ["text", "audio"],
-                "tool_choice": "auto"
+                "tool_choice": "required"
             }
         })
 
