@@ -177,8 +177,13 @@ def send_text_message(text):
             }
         })
 
-        # Request a response
-        client.send_event("response.create")
+        # Request a response with tool usage enabled
+        client.send_event("response.create", {
+            "response": {
+                "modalities": ["text", "audio"],
+                "tool_choice": "auto"
+            }
+        })
 
     except Exception as e:
         print(f"Error sending text message: {e}")

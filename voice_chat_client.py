@@ -473,7 +473,12 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
                         })
 
                         # Request response to continue conversation
-                        self.send_event("response.create")
+                        self.send_event("response.create", {
+                            "response": {
+                                "modalities": ["text", "audio"],
+                                "tool_choice": "auto"
+                            }
+                        })
 
                     except Exception as e:
                         print(f"   ❌ Error executing function: {e}")
@@ -881,8 +886,13 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
         # Commit the buffer (triggers transcription and response)
         self.send_event("input_audio_buffer.commit")
 
-        # Request a new response
-        self.send_event("response.create")
+        # Request a new response with tool usage enabled
+        self.send_event("response.create", {
+            "response": {
+                "modalities": ["text", "audio"],
+                "tool_choice": "auto"
+            }
+        })
 
         if DEBUG_AEC:
             print(f"   ✅ Audio sent, waiting for response...")
