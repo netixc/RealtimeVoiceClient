@@ -65,8 +65,13 @@ except ImportError:
     print("   Ensure DTLN-aec repository is cloned in this directory")
 
 # Configuration
-BACKEND_URL = "ws://192.168.50.40:8000/v1/realtime?model=gpt-realtime"
-API_KEY = "test-key"
+# Option 1: Use custom backend server (may not support function calling)
+BACKEND_URL = os.environ.get("BACKEND_URL", "ws://192.168.50.40:8000/v1/realtime?model=gpt-realtime")
+API_KEY = os.environ.get("API_KEY", "test-key")
+
+# Option 2: Connect directly to OpenAI (uncomment to test function calling)
+# BACKEND_URL = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01"
+# API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # Audio configuration
 SAMPLE_RATE = 24000  # TTS output rate
@@ -348,6 +353,11 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
                     for tool in tools:
                         print(f"   - {tool['name']}")
 
+                    # Debug: show what we're sending
+                    if DEBUG_AEC:
+                        print(f"   🔍 Full session config:")
+                        print(f"      {json.dumps(session_config, indent=6)[:500]}...")
+
                 self.send_event("session.update", session_config)
 
             elif event_type == "session.updated":
@@ -521,6 +531,10 @@ When a user asks anything about "agents", they mean the AI agents in YOUR system
         event = {"type": event_type}
         if event_data:
             event.update(event_data)
+
+        # Debug log for response.create events
+        if event_type == "response.create" and DEBUG_AEC:
+            print(f"   🔍 Sending response.create: {json.dumps(event, indent=2)}")
 
         self.ws.send(json.dumps(event))
 
