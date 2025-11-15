@@ -20,6 +20,7 @@ import websocket
 import base64
 import queue
 import signal
+import os
 
 # Try to import required libraries
 try:
