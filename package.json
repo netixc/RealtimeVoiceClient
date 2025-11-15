@@ -1,0 +1,31 @@
+{
+  "name": "realtime-voice-client",
+  "version": "0.1.0",
+  "description": "OpenAI Realtime API Voice Chat Client with DTLN-aec Echo Cancellation",
+  "scripts": {
+    "install": "bash scripts/install.sh",
+    "dev": "uv run voice_chat_desktop.py",
+    "start": "npm run dev",
+    "cli": "uv run voice_chat_client.py",
+    "test": "echo 'No tests configured yet'",
+    "setup": "bash scripts/install.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netixc/RealtimeVoiceClient.git"
+  },
+  "keywords": [
+    "openai",
+    "realtime-api",
+    "voice-chat",
+    "ai",
+    "multi-agent",
+    "echo-cancellation",
+    "dtln-aec"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

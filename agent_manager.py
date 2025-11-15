@@ -551,6 +551,8 @@ class AgentManager:
         """Execute Agent Zero command"""
         # Create operator file for tracking
         agent_dir = self.agents_dir / "agent_zero" / agent_name
+        agent_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         operator_file = f"operator_{timestamp}.md"
         operator_path = agent_dir / operator_file
@@ -617,19 +619,20 @@ class AgentManager:
                 )
                 return
 
-            # Make API request to Agent Zero
-            headers = {}
+            # Make API request to Agent Zero using the correct /api_message endpoint
+            headers = {
+                "Content-Type": "application/json"
+            }
             if agent_zero_api_key:
-                headers["Authorization"] = f"Bearer {agent_zero_api_key}"
+                headers["X-API-KEY"] = agent_zero_api_key
 
             payload = {
-                "agent_name": agent_name,
-                "task": prompt,
-                "max_iterations": 10
+                "message": prompt,
+                "lifetime_hours": 24
             }
 
             response = requests.post(
-                f"{agent_zero_api_url}/api/task",
+                f"{agent_zero_api_url}/api_message",
                 json=payload,
                 headers=headers,
                 timeout=300  # 5 minute timeout
@@ -637,10 +640,16 @@ class AgentManager:
 
             if response.status_code == 200:
                 result = response.json()
+                # Extract the actual response from Agent Zero's API format
+                agent_response = result.get("response", "No response received")
+                context_id = result.get("context_id", "N/A")
+
                 operator_path.write_text(
                     f"{operator_path.read_text()}\n\n"
                     f"## Result\n✅ SUCCESS\n\n"
-                    f"### Response\n```json\n{json.dumps(result, indent=2)}\n```\n",
+                    f"**Context ID:** {context_id}\n\n"
+                    f"### Agent Zero Response\n{agent_response}\n\n"
+                    f"### Full API Response\n```json\n{json.dumps(result, indent=2)}\n```\n",
                     encoding="utf-8"
                 )
             else:

@@ -10,6 +10,11 @@ import threading
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from voice_chat_client import VoiceChatClient, BACKEND_URL, API_KEY
 from agent_manager import AgentManager
 
@@ -22,6 +27,31 @@ agent_manager = None
 eel.init('web')
 
 @eel.expose
+def get_config():
+    """Return configuration for browser-based audio client"""
+    return {
+        'backend_url': BACKEND_URL,
+        'api_key': API_KEY
+    }
+
+@eel.expose
+def log_to_server(level, message, data=None):
+    """Receive console logs from browser and print them to server terminal"""
+    import json
+    timestamp = __import__('datetime').datetime.now().strftime('%H:%M:%S.%f')[:-3]
+
+    # Format the log message
+    if data:
+        try:
+            data_str = json.dumps(data, indent=2)
+            print(f"[{timestamp}] [{level.upper()}] {message}")
+            print(f"  Data: {data_str}")
+        except:
+            print(f"[{timestamp}] [{level.upper()}] {message} | Data: {data}")
+    else:
+        print(f"[{timestamp}] [{level.upper()}] {message}")
+
+@eel.expose
 def start_voice_chat(mic_enabled=True):
     """Start the voice chat client"""
     global client, client_thread, agent_manager
@@ -32,11 +62,8 @@ def start_voice_chat(mic_enabled=True):
 
     print("🎤 Starting voice chat client...")
 
-    # Initialize agent manager if not already created
-    if agent_manager is None:
-        workspace_dir = Path.cwd() / "workspace"
-        agent_manager = AgentManager(working_dir=str(workspace_dir))
-        print(f"   🤖 Agent manager initialized: {workspace_dir}")
+    # Agent manager is already initialized in main()
+    # No need to initialize here anymore
 
     # Create function handlers for agent management
     function_handlers = {
@@ -291,22 +318,89 @@ def ui_get_agent_status(agent_name):
 
     return agent_manager.get_agent_status(agent_name)
 
+@eel.expose
+def ui_get_operator_file(agent_name, operator_file):
+    """Get operator file contents for polling updates"""
+    global agent_manager
+
+    if agent_manager is None:
+        return {"ok": False, "error": "Agent manager not initialized"}
+
+    try:
+        # Get agent metadata to find the correct directory
+        status = agent_manager.get_agent_status(agent_name)
+        if not status.get("ok"):
+            return status
+
+        # Extract tool from status response
+        tool = status.get("tool")
+        if not tool:
+            return {"ok": False, "error": "Agent tool not found"}
+
+        # Build path to operator file
+        from pathlib import Path
+        agent_dir = Path(agent_manager.working_dir) / "agents" / tool / agent_name
+        operator_path = agent_dir / operator_file
+
+        if not operator_path.exists():
+            return {"ok": False, "error": f"Operator file not found: {operator_file}"}
+
+        # Read and return contents
+        content = operator_path.read_text(encoding="utf-8")
+
+        # Check if task is complete by looking for "## Result" section
+        is_complete = "## Result" in content and "Processing..." not in content.split("## Result")[1].split("\n")[0:3]
+
+        return {
+            "ok": True,
+            "content": content,
+            "is_complete": is_complete,
+            "operator_file": operator_file
+        }
+
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def main():
     """Main entry point"""
+    global agent_manager
+
     print("=" * 60)
     print("🎙️ Voice Chat Desktop App with DTLN-aec")
     print("=" * 60)
     print()
-    print("Starting desktop app...")
+    print("Starting web server...")
+    print()
+
+    # Initialize agent manager at startup
+    workspace_dir = Path.cwd() / "workspace"
+    agent_manager = AgentManager(working_dir=str(workspace_dir))
+    print(f"🤖 Agent manager initialized: {workspace_dir}")
+
+    # Load existing agents
+    agents = agent_manager.list_agents()
+    if agents.get("count", 0) > 0:
+        print(f"   📋 Found {agents['count']} existing agent(s)")
+    print()
+
+    # Get host and port from environment or use defaults
+    host = os.getenv('WEB_HOST', '0.0.0.0')  # Bind to all interfaces
+    port = int(os.getenv('WEB_PORT', '8889'))
+
+    print(f"🌐 Web interface available at:")
+    print(f"   Local:   http://localhost:{port}")
+    print(f"   Network: http://192.168.50.40:{port}")
+    print()
+    print("Press Ctrl+C to stop the server")
     print()
 
     try:
-        # Start Eel app - try Brave browser on macOS
+        # Start Eel app in web server mode (no browser launch)
         eel.start('index.html',
-                  size=(800, 900),
-                  port=8889,
-                  mode='custom',
-                  cmdline_args=['/Applications/Brave Browser.app/Contents/MacOS/Brave Browser', '--app=http://localhost:8889/index.html'])
+                  host=host,
+                  port=port,
+                  mode=None,  # Don't auto-launch browser
+                  block=True)
     except (SystemExit, KeyboardInterrupt):
         print("\n\nShutting down...")
         if client:

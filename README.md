@@ -49,28 +49,41 @@ This client is designed to work with the [RealtimeVoiceChat](https://github.com/
 
 ## Installation
 
-### 1. Install uv (Python package manager)
+### Quick Start (npm)
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### 2. Clone the repository with submodules
-
-```bash
+# Clone the repository
 git clone --recurse-submodules https://github.com/netixc/RealtimeVoiceClient.git
 cd RealtimeVoiceClient
+
+# Install dependencies (automatically installs uv and Python packages)
+npm install
+
+# Configure environment variables
+cp .env.sample .env
+# Edit .env with your API keys
+
+# Start the desktop app
+npm run dev
 ```
 
-If you already cloned without `--recurse-submodules`:
-```bash
-git submodule update --init --recursive
-```
+### Alternative Installation (using uv directly)
 
-### 3. Install dependencies
+If you prefer to use `uv` directly:
 
 ```bash
+# 1. Install uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Clone the repository with submodules
+git clone --recurse-submodules https://github.com/netixc/RealtimeVoiceClient.git
+cd RealtimeVoiceClient
+
+# 3. Install dependencies
 uv sync
+
+# 4. Initialize submodules if needed
+git submodule update --init --recursive
 ```
 
 ### 4. Configure environment variables
@@ -100,15 +113,26 @@ Run the [RealtimeVoiceChat](https://github.com/netixc/RealtimeVoiceChat) backend
 
 ## Usage
 
-### Desktop App (Recommended)
+### Web Interface (Recommended)
 
-Run the beautiful desktop app with UI:
+Start the web server:
 
+```bash
+npm run dev
+# or
+npm start
+```
+
+Alternatively, using uv directly:
 ```bash
 uv run voice_chat_desktop.py
 ```
 
-This launches a desktop window with:
+Then open your browser to:
+- **Local:** http://localhost:8889
+- **Network:** http://YOUR_SERVER_IP:8889
+
+The web interface includes:
 - **💬 Chat Tab** - Real-time conversation with voice and text input
 - **🤖 Agents Tab** - Create and manage AI agents
 - **📊 Events Tab** - Monitor all agent activity in real-time
@@ -161,6 +185,11 @@ This launches a desktop window with:
 Run the command-line version:
 
 ```bash
+npm run cli
+```
+
+Alternatively, using uv directly:
+```bash
 uv run voice_chat_client.py
 ```
 
@@ -170,6 +199,16 @@ uv run voice_chat_client.py
 - **Interrupt anytime** - Just start speaking to interrupt the AI mid-response
 - **Desktop App**: Click Start/Stop buttons
 - **Terminal**: Press Ctrl+C to exit
+
+### Available npm Commands
+
+```bash
+npm install      # Install dependencies (runs setup script)
+npm run dev      # Start the desktop app
+npm start        # Alias for npm run dev
+npm run cli      # Run terminal client
+npm run setup    # Re-run setup if needed
+```
 
 ## Configuration
 
