@@ -38,7 +38,7 @@
     }
     .chat-container {
       flex: 1;
-      max-width: 600px;
+      max-width: 900px;
       width: 100%;
       background: #fff;
       box-shadow: var(--shadow);
@@ -47,6 +47,42 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+    .tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e1e5ef;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
+      border-bottom: 3px solid transparent;
+    }
+    .tab:hover {
+      background: #f0f1f3;
+      color: #2c3e50;
+    }
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      background: #fff;
+    }
+    .panel {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel.active {
+      display: flex;
     }
     .header {
       background: var(--primary);
@@ -172,6 +208,144 @@
     .toggle-mic-btn.muted {
       background-color: #ef4444;
     }
+    /* Agent Panel Styles */
+    .agent-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg);
+    }
+    .agent-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .agent-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .agent-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2c3e50;
+    }
+    .agent-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .agent-status.active {
+      background: #d4edda;
+      color: #155724;
+    }
+    .agent-status.idle {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .agent-meta {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .agent-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .agent-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .agent-btn:hover {
+      opacity: 0.8;
+    }
+    .agent-btn.command {
+      background: #667eea;
+      color: white;
+    }
+    .agent-btn.delete {
+      background: #ef4444;
+      color: white;
+    }
+    .create-agent-btn {
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      margin: 16px;
+    }
+    .create-agent-btn:hover {
+      opacity: 0.9;
+    }
+    /* Observability Panel Styles */
+    .event-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: #1e1e1e;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    .event {
+      background: #2d2d2d;
+      border-left: 3px solid #667eea;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      color: #e0e0e0;
+    }
+    .event-type {
+      color: #4ade80;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .event-timestamp {
+      color: #888;
+      font-size: 11px;
+    }
+    .event-data {
+      color: #a0a0a0;
+      margin-top: 6px;
+      white-space: pre-wrap;
+    }
+    .event.function_call {
+      border-left-color: #fbbf24;
+    }
+    .event.agent_command {
+      border-left-color: #667eea;
+    }
+    .event.error {
+      border-left-color: #ef4444;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #888;
+    }
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -238,14 +412,24 @@
             font-family="Inter"
           >AI</text>
         </svg>
-        Voice Chat
-        <span class="aec-badge">DTLN-aec</span>
+        Voice Chat Orchestrator
+        <span class="aec-badge">Multi-Agent</span>
         <span class="status" id="status">
           <span class="status-dot" id="statusDot"></span>
           <span id="statusText">Ready</span>
         </span>
       </div>
-      <div class="messages" id="messages"></div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="chat">💬 Chat</button>
+        <button class="tab" data-tab="agents">🤖 Agents</button>
+        <button class="tab" data-tab="events">📊 Events</button>
+      </div>
+
+      <!-- Chat Panel -->
+      <div id="chatPanel" class="panel active">
+        <div class="messages" id="messages"></div>
       <div class="input-bar">
         <div class="input-row">
           <input type="text" id="textInput" class="text-input" placeholder="Type a message..." disabled>
@@ -289,6 +473,35 @@
           </button>
         </div>
       </div>
+      </div>
+
+      <!-- Agents Panel -->
+      <div id="agentsPanel" class="panel">
+        <div class="agent-list" id="agentList">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <p>No agents created yet</p>
+            <p style="font-size: 14px; margin-top: 8px;">Create an agent to get started</p>
+          </div>
+        </div>
+        <button class="create-agent-btn" id="createAgentBtn">+ Create New Agent</button>
+      </div>
+
+      <!-- Events Panel -->
+      <div id="eventsPanel" class="panel">
+        <div class="event-stream" id="eventStream">
+          <div class="empty-state" style="color: #888;">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+            <p>No events yet</p>
+            <p style="font-size: 12px; margin-top: 8px;">Events will appear here when agents are active</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
   <script type="text/javascript" src="/eel.js"></script>
