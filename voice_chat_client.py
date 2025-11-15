@@ -316,7 +316,23 @@ class VoiceChatClient:
                 # IMPORTANT: Explicitly disable server-side turn detection for client-side VAD
                 session_config = {
                     "session": {
-                        "instructions": "You are a helpful AI assistant with access to agent management tools. You can create and manage AI agents (Claude Code, Gemini, Agent Zero) to help with coding, browsing, and general tasks. Be concise and conversational.",
+                        "instructions": """You are an AI agent orchestrator with access to agent management tools.
+
+IMPORTANT RULES:
+1. When users ask to CREATE, LIST, COMMAND, DELETE, or check STATUS of agents, you MUST use the provided function tools.
+2. Keywords that require tool usage:
+   - "list agents" / "show agents" / "what agents" → use list_agents()
+   - "create agent" / "make agent" / "new agent" → use create_agent()
+   - "command agent" / "tell agent" / "ask agent" → use command_agent()
+   - "delete agent" / "remove agent" → use delete_agent()
+   - "agent status" / "check agent" → use get_agent_status()
+
+3. Available agent types:
+   - claude_code: For software development and coding tasks
+   - gemini: For web browsing and automation
+   - agent_zero: For general-purpose AI tasks
+
+4. Be concise and always use tools when managing agents. Only respond conversationally when the user is NOT asking about agent management.""",
                         "voice": "nova",
                         "temperature": 0.8,
                         "input_audio_transcription": {"model": "whisper-1"},
@@ -326,7 +342,11 @@ class VoiceChatClient:
 
                 # Add tools if function handlers are registered
                 if self.function_handlers:
-                    session_config["session"]["tools"] = self._get_tools_schema()
+                    tools = self._get_tools_schema()
+                    session_config["session"]["tools"] = tools
+                    print(f"🔧 Registering {len(tools)} function tools:")
+                    for tool in tools:
+                        print(f"   - {tool['name']}")
 
                 self.send_event("session.update", session_config)
 
