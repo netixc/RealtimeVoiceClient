@@ -179,11 +179,12 @@ class RLSEchoCanceller:
 
 
 class VoiceChatClient:
-    def __init__(self, url, api_key):
+    def __init__(self, url, api_key, function_handlers=None):
         self.url = url
         self.api_key = api_key
         self.ws = None
         self.running = False
+        self.function_handlers = function_handlers or {}  # Function call handlers
 
         # Audio streams
         self.pyaudio_instance = pyaudio.PyAudio()
@@ -200,6 +201,9 @@ class VoiceChatClient:
         self.silence_frames = 0
         self.speech_frames = 0
         self.mic_enabled = True  # Microphone toggle
+
+        # Function calling state
+        self.pending_function_calls = {}
 
         # Queues
         self.audio_queue = queue.Queue()
@@ -310,15 +314,21 @@ class VoiceChatClient:
 
                 # Update session with our preferences
                 # IMPORTANT: Explicitly disable server-side turn detection for client-side VAD
-                self.send_event("session.update", {
+                session_config = {
                     "session": {
-                        "instructions": "You are a helpful AI assistant. Be concise and conversational.",
+                        "instructions": "You are a helpful AI assistant with access to agent management tools. You can create and manage AI agents (Claude Code, Gemini, Agent Zero) to help with coding, browsing, and general tasks. Be concise and conversational.",
                         "voice": "nova",
                         "temperature": 0.8,
                         "input_audio_transcription": {"model": "whisper-1"},
                         "turn_detection": {"type": "none"}  # Disable server-side VAD
                     }
-                })
+                }
+
+                # Add tools if function handlers are registered
+                if self.function_handlers:
+                    session_config["session"]["tools"] = self._get_tools_schema()
+
+                self.send_event("session.update", session_config)
 
             elif event_type == "session.updated":
                 print("✅ Session configured")
@@ -408,6 +418,60 @@ class VoiceChatClient:
                 print("🎤 Listening...")
                 print()
 
+            elif event_type == "response.function_call_arguments.delta":
+                # Function call argument streaming
+                call_id = event.get("call_id")
+                delta = event.get("delta", "")
+                if call_id:
+                    if call_id not in self.pending_function_calls:
+                        self.pending_function_calls[call_id] = {"name": "", "arguments": ""}
+                    self.pending_function_calls[call_id]["arguments"] += delta
+
+            elif event_type == "response.function_call_arguments.done":
+                # Function call complete - execute it
+                call_id = event.get("call_id")
+                name = event.get("name")
+                arguments = event.get("arguments", "{}")
+
+                print(f"\n🔧 Function call: {name}")
+                print(f"   Arguments: {arguments}")
+
+                if name in self.function_handlers:
+                    try:
+                        import json as json_lib
+                        args = json_lib.loads(arguments)
+                        result = self.function_handlers[name](**args)
+                        print(f"   ✅ Result: {result}")
+
+                        # Send function output back to server
+                        self.send_event("conversation.item.create", {
+                            "item": {
+                                "type": "function_call_output",
+                                "call_id": call_id,
+                                "output": json_lib.dumps(result)
+                            }
+                        })
+
+                        # Request response to continue conversation
+                        self.send_event("response.create")
+
+                    except Exception as e:
+                        print(f"   ❌ Error executing function: {e}")
+                        error_result = {"ok": False, "error": str(e)}
+                        self.send_event("conversation.item.create", {
+                            "item": {
+                                "type": "function_call_output",
+                                "call_id": call_id,
+                                "output": json_lib.dumps(error_result)
+                            }
+                        })
+                else:
+                    print(f"   ⚠️  No handler registered for function: {name}")
+
+                # Clean up pending call
+                if call_id in self.pending_function_calls:
+                    del self.pending_function_calls[call_id]
+
             elif event_type == "error":
                 error = event.get("error", {})
                 print(f"\n❌ Error: {error.get('type')} - {error.get('message')}")
@@ -434,6 +498,98 @@ class VoiceChatClient:
             event.update(event_data)
 
         self.ws.send(json.dumps(event))
+
+    def _get_tools_schema(self):
+        """Get tools schema for function calling"""
+        return [
+            {
+                "type": "function",
+                "name": "create_agent",
+                "description": "Create a new AI agent (Claude Code for coding, Gemini for browser automation, or Agent Zero for general tasks)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "tool": {
+                            "type": "string",
+                            "enum": ["claude_code", "gemini", "agent_zero"],
+                            "description": "Type of agent to create"
+                        },
+                        "agent_type": {
+                            "type": "string",
+                            "description": "Agent type (agentic_coding, agentic_browsing, agentic_general)"
+                        },
+                        "agent_name": {
+                            "type": "string",
+                            "description": "Unique name for the agent"
+                        },
+                        "lifetime_hours": {
+                            "type": "number",
+                            "description": "How many hours the agent should live (default 24)",
+                            "default": 24
+                        }
+                    },
+                    "required": ["tool", "agent_type", "agent_name"]
+                }
+            },
+            {
+                "type": "function",
+                "name": "list_agents",
+                "description": "List all active AI agents and their status",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "type": "function",
+                "name": "command_agent",
+                "description": "Send a command or instruction to an existing agent",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "agent_name": {
+                            "type": "string",
+                            "description": "Name of the agent to command"
+                        },
+                        "prompt": {
+                            "type": "string",
+                            "description": "Command or instruction for the agent"
+                        }
+                    },
+                    "required": ["agent_name", "prompt"]
+                }
+            },
+            {
+                "type": "function",
+                "name": "delete_agent",
+                "description": "Delete an agent and remove it from the registry",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "agent_name": {
+                            "type": "string",
+                            "description": "Name of the agent to delete"
+                        }
+                    },
+                    "required": ["agent_name"]
+                }
+            },
+            {
+                "type": "function",
+                "name": "get_agent_status",
+                "description": "Get detailed status and metadata for an agent",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "agent_name": {
+                            "type": "string",
+                            "description": "Name of the agent to query"
+                        }
+                    },
+                    "required": ["agent_name"]
+                }
+            }
+        ]
 
     def start_listening(self):
         """Start listening to microphone in a separate thread."""

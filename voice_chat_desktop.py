@@ -8,11 +8,15 @@ This combines the voice_chat_client.py with a beautiful web UI using Eel.
 import eel
 import threading
 import sys
+import os
+from pathlib import Path
 from voice_chat_client import VoiceChatClient, BACKEND_URL, API_KEY
+from agent_manager import AgentManager
 
 # Global client instance
 client = None
 client_thread = None
+agent_manager = None
 
 # Initialize Eel
 eel.init('web')
@@ -20,7 +24,7 @@ eel.init('web')
 @eel.expose
 def start_voice_chat(mic_enabled=True):
     """Start the voice chat client"""
-    global client, client_thread
+    global client, client_thread, agent_manager
 
     if client is not None:
         print("Voice chat already running")
@@ -28,11 +32,27 @@ def start_voice_chat(mic_enabled=True):
 
     print("🎤 Starting voice chat client...")
 
+    # Initialize agent manager if not already created
+    if agent_manager is None:
+        workspace_dir = Path.cwd() / "workspace"
+        agent_manager = AgentManager(working_dir=str(workspace_dir))
+        print(f"   🤖 Agent manager initialized: {workspace_dir}")
+
+    # Create function handlers for agent management
+    function_handlers = {
+        "create_agent": agent_manager.create_agent,
+        "list_agents": lambda: agent_manager.list_agents(),
+        "command_agent": agent_manager.command_agent,
+        "delete_agent": agent_manager.delete_agent,
+        "get_agent_status": agent_manager.get_agent_status,
+    }
+
     # Create client with custom callbacks for UI updates
-    client = VoiceChatClient(BACKEND_URL, API_KEY)
+    client = VoiceChatClient(BACKEND_URL, API_KEY, function_handlers=function_handlers)
     # Set initial mic state from UI
     client.mic_enabled = mic_enabled
     print(f"   🎤 Microphone initial state: {'enabled' if mic_enabled else 'muted'}")
+    print(f"   🛠️  Function calling enabled with {len(function_handlers)} tools")
 
     # Override callbacks to update UI
     original_on_message = client.on_message
@@ -186,6 +206,84 @@ def toggle_microphone(enabled):
 def clear_conversation():
     """Clear conversation - placeholder for future functionality"""
     print("Clear conversation requested")
+
+# ------------------------------------------------------------------ #
+# Agent Management Functions (exposed to UI)
+# ------------------------------------------------------------------ #
+
+@eel.expose
+def ui_create_agent(tool, agent_type, agent_name, lifetime_hours=24):
+    """Create agent from UI"""
+    global agent_manager
+
+    if agent_manager is None:
+        workspace_dir = Path.cwd() / "workspace"
+        agent_manager = AgentManager(working_dir=str(workspace_dir))
+
+    result = agent_manager.create_agent(tool, agent_type, agent_name, lifetime_hours)
+
+    # Broadcast agent list update to UI
+    if result.get("ok"):
+        eel.update_agent_list(agent_manager.list_agents())
+
+    return result
+
+@eel.expose
+def ui_list_agents():
+    """List all agents from UI"""
+    global agent_manager
+
+    if agent_manager is None:
+        return {"ok": True, "agents": [], "count": 0}
+
+    return agent_manager.list_agents()
+
+@eel.expose
+def ui_command_agent(agent_name, prompt):
+    """Send command to agent from UI"""
+    global agent_manager
+
+    if agent_manager is None:
+        return {"ok": False, "error": "Agent manager not initialized"}
+
+    result = agent_manager.command_agent(agent_name, prompt)
+
+    # Send event to observability stream
+    if result.get("ok"):
+        eel.add_observability_event({
+            "type": "agent_command",
+            "agent_name": agent_name,
+            "prompt": prompt[:100] + "..." if len(prompt) > 100 else prompt,
+            "timestamp": __import__('datetime').datetime.now().isoformat()
+        })
+
+    return result
+
+@eel.expose
+def ui_delete_agent(agent_name):
+    """Delete agent from UI"""
+    global agent_manager
+
+    if agent_manager is None:
+        return {"ok": False, "error": "Agent manager not initialized"}
+
+    result = agent_manager.delete_agent(agent_name)
+
+    # Broadcast agent list update to UI
+    if result.get("ok"):
+        eel.update_agent_list(agent_manager.list_agents())
+
+    return result
+
+@eel.expose
+def ui_get_agent_status(agent_name):
+    """Get agent status from UI"""
+    global agent_manager
+
+    if agent_manager is None:
+        return {"ok": False, "error": "Agent manager not initialized"}
+
+    return agent_manager.get_agent_status(agent_name)
 
 def main():
     """Main entry point"""
